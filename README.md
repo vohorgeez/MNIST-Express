@@ -1,5 +1,9 @@
 MNIST Express est une mini-appli qui entraîne un classifieur k-NN sur le dataset de chiffres manuscrits MNIST (ou digits) avec scikit-learn. Le notebook mnist_knn.ipynb charge les données, normalise les features, entraîne le modèle, mesure la performance (accuracy, classification report, matrice de confusion) et met en avant quelques exemples mal classés pour analyse.
 
+## Version déployée :
+Vous pouvez accéder à l'application directement sur Streamlit à l'URL suivante :
+https://mnist-express.streamlit.app/
+
 ## Prérequis : 
 
 Python ≥3.9, pip, dépendances (scikit-learn, numpy, matplotlib, optionnel jupyter, streamlit). Installation rapide (sur terminal):
