@@ -9,6 +9,12 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KNeighborsClassifier
 from streamlit_drawable_canvas import st_canvas
 
+if "predicted" not in st.session_state:
+    st.session_state["predicted"] = False
+    st.session_state["raw_8x8"] = None
+    st.session_state["sample"] = None
+    st.session_state["probas"] = None
+
 def center_image(arr: np.ndarray) -> np.ndarray:
     # arr : H x W (float ou int, déjà en niveaux de gris)
     ys, xs = np.where(arr > 0)
@@ -110,22 +116,40 @@ canvas = st_canvas(
 top_k = st.slider("Afficher les top-k classes", min_value=1, max_value=10, value=3)
 
 if canvas.image_data is not None:
-    sample = preprocess_canvas_image(canvas.image_data)
-    sample = scaler.transform(sample)
+    if st.button("Prédire"):
+        raw_8x8 = preprocess_canvas_image(canvas.image_data)
+        sample = scaler.transform(raw_8x8)
 
-    probas = clf.predict_proba(sample)[0]
-    pred = int(np.argmax(probas))
+        probas = clf.predict_proba(sample)[0]
 
-    st.write(f"**Prédiction : {pred}**")
+        st.session_state["predicted"] = True
+        st.session_state["raw_8x8"] = raw_8x8
+        st.session_state["sample"] = sample
+        st.session_state["probas"] = probas
 
-    top_indices = np.argsort(probas)[::-1][:top_k]
-    top_values = probas[top_indices]
+    if st.session_state["predicted"]:
+        probas = st.session_state["probas"]
+        sample = st.session_state["sample"]
+        raw_8x8 = st.session_state["raw_8x8"]
 
-    for cls, p in zip(top_indices, top_values):
-        st.write(f"Classe {cls} : {p:.3f}")
+        pred = int(np.argmax(probas))
+        st.write(f"**Prédiction : {pred}**")
 
-    if st.checkbox("Voir la version 8x8 utilisée par le modèle"):
-        fig, ax = plt.subplots()
-        ax.imshow(sample.reshape(8, 8), cmap="gray")
-        ax.axis("off")
-        st.pyplot(fig)
+        top_indices = np.argsort(probas)[::-1][:top_k]
+        top_values = probas[top_indices]
+
+        for cls, p in zip(top_indices, top_values):
+            st.write(f"Classe {cls} : {p:.3f}")
+
+        if st.checkbox("Voir la version 8x8 utilisée par le modèle"):
+            fig, ax = plt.subplots()
+            ax.imshow(sample.reshape(8, 8), cmap="gray")
+            ax.axis("off")
+            st.pyplot(fig)
+
+        if st.checkbox("Voir l'image 8x8 AVANT scaler"):
+            before_scale = preprocess_canvas_image(canvas.image_data)
+            fig, ax = plt.subplots()
+            ax.imshow(before_scale.reshape(8, 8), cmap="gray")
+            ax.axis("off")
+            st.pyplot(fig)
