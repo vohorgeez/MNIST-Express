@@ -9,27 +9,51 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KNeighborsClassifier
 from streamlit_drawable_canvas import st_canvas
 
-def preprocess_canvas_image(image):
+def center_image(arr: np.ndarray) -> np.ndarray:
+    # arr : H x W (float ou int, déjà en niveaux de gris)
+    ys, xs = np.where(arr > 0)
+    if len(xs) == 0:
+        return arr # canvas vide => on laisse tel quel
+    
+    x1, x2 = xs.min(), xs.max()
+    y1, y2 = ys.min(), ys.max()
+
+    cropped = arr[y1:y2+1, x1:x2+1]
+
+    # remettre dans un carré centré
+    size = max(cropped.shape)
+    padded = np.zeros((size, size), dtype=cropped.dtype)
+    y_offset = (size - cropped.shape[0]) // 2
+    x_offset = (size - cropped.shape[1]) // 2
+    padded[y_offset:y_offset+cropped.shape[0],
+           x_offset:x_offset+cropped.shape[1]] = cropped
+    
+    return padded
+
+def preprocess_canvas_image(image: np.ndarray) -> np.ndarray:
     """
     image : array H x W x 4 (RGBA) venant du canvas
     retourne : array 1 x 64 prêt pour scaler.transform(...)
     """
-    # 1. passer en niveaux de gris (on prend un canal)
+    # 1. niveaux de gris
     img = image[:, :, 0]
 
-    # 2. inversion car dans load_digits, traits = clair, fond = sombre
+    # 2. inversion (noir trait -> clair trait)
     img = 255 - img
 
-    # 3. resize vers 8x8 avec PIL
-    pil = Image.fromarray(img.astype(np.uint8)).resize((8, 8), Image.BICUBIC)
+    # 3. centrage sur le chiffre
+    img = center_image(img)
 
-    # 4. numpy + float
+    # 4. resize EXACTEMENT en 8x8
+    pil = Image.fromarray(img.astype(np.uint8)).resize((8, 8), Image.BOX)
+
+    # 5. numpy + float
     arr = np.array(pil).astype(np.float32)
 
-    # 5. mise à l'échelle 0-16 comme load_digits
+    # 6. mise à l'échelle 0-16 comme load_digits
     arr = arr * (16.0 / 255.0)
 
-    # 6. flatten en vecteur 1 x 64
+    # 6. flatten -> 1 x 64
     arr = arr.reshape(1, -1)
 
     return arr
