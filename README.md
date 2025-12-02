@@ -1,34 +1,59 @@
-MNIST Express est une mini-appli qui entraîne un classifieur k-NN sur le dataset de chiffres manuscrits MNIST (ou digits) avec scikit-learn. Le notebook mnist_knn.ipynb charge les données, normalise les features, entraîne le modèle, mesure la performance (accuracy, classification report, matrice de confusion) et met en avant quelques exemples mal classés pour analyse.
+# MNIST Express
 
-## Version déployée :
-Vous pouvez accéder à l'application directement sur Streamlit à l'URL suivante :
-https://mnist-express.streamlit.app/
+MNIST Express est une mini-application qui entraine un classifieur k-NN sur le dataset de chiffres manuscrits MNIST (ou digits) avec scikit-learn. Le notebook `mnist_knn.ipynb` charge les donnees, normalise les features, entraine le modele, mesure la performance (accuracy, classification report, matrice de confusion) et propose quelques exemples mal classes pour analyse.
 
-## Prérequis : 
+## Version deployee
 
-Python ≥3.9, pip, dépendances (scikit-learn, numpy, matplotlib, optionnel jupyter, streamlit). Installation rapide (sur terminal):
-pip install jupyter scikit-learn numpy matplotlib
+L'application Streamlit est accessible ici : https://mnist-express.streamlit.app/
 
-## Usage Notebook :
+## Nouveautes v2 - UX interactive
 
-jupyter notebook ou jupyter lab dans le répertoire.
-Ouvrir mnist_knn.ipynb et exécuter les cellules dans l’ordre.
-Résultats attendus : précision ~97 % (digits), affichage de la matrice de confusion et de vignettes mal classées.
+- Mini-app Streamlit avec un canvas de dessin 28x28 integre (via `streamlit-drawable-canvas`).
+- Pipeline de pre-traitement unifie (resize 28x28, passage en niveaux de gris, inversion optionnelle pour corriger le fond, normalisation dans [0,1]).
+- Bouton `Predire` qui declenche une inference en direct et affiche le label predit ainsi que les probabilites top-k.
+- Controleurs pour k, distance et poids, afin d'experimenter rapidement plusieurs variantes k-NN.
+- Inference rapide et fluide, meme en selectionnant des top-k eleves.
+
+## Pipeline de pre-traitement
+
+1. Redimensionnement du canvas ou de l'image utilisateur vers 28x28.
+2. Conversion en niveaux de gris et normalisation dans [0,1].
+3. Inversion optionnelle si le fond est clair.
+4. Flatten puis passage dans le k-NN deja entraine.
+
+Cette meme chaine est utilisee par la mini-app et par le notebook afin de garantir des predictions coherentes.
+
+## Prerequis
+
+- Python >= 3.9 et pip.
+- Dependances : `scikit-learn`, `numpy`, `matplotlib`, `streamlit`, `streamlit-drawable-canvas`, `pillow`, `jupyter` (optionnel).
+
+Installation rapide :
+
+```
+pip install jupyter scikit-learn numpy matplotlib streamlit streamlit-drawable-canvas pillow
+```
+
+## Usage Notebook
+
+1. `jupyter notebook` ou `jupyter lab` dans ce repertoire.
+2. Ouvrir `mnist_knn.ipynb` et executer toutes les cellules.
+3. Resultats attendus : precision ~97% (digits), matrice de confusion et vignettes mal classees.
 
 ## UI Streamlit
 
-Une interface légère permet de jouer avec le modèle en live.
+### Lancer la mini-app
 
-### Installation complémentaire
-pip install streamlit streamlit-drawable-canvas pillow
-
-### Lancer l’app
+```
 streamlit run app.py
+```
 
-### Fonctionnalités
-- Choix interactif du nombre de voisins k (slider).
-- Aperçu de quelques exemples du jeu de données.
-- Zone de dessin (8×8 pixels reconstruits automatiquement) pour tester ses propres chiffres manuscrits.
-- Affichage instantané de la prédiction k-NN, avec visualisation optionnelle de l’image 8×8 passée au modèle.
+### Fonctionnalites principales
 
-> Astuce : pour passer sur le MNIST 28×28 depuis `fetch_openml`, adapter `app.py` (reshape 28×28 + scaler) et s’assurer que la zone de dessin redimensionne vers 28×28 avant la prédiction.
+- Canvas de dessin 28x28 avec rendu instantane.
+- Bouton `Predire` pour obtenir le label et les probabilites top-k.
+- Selecteurs pour k, metrique de distance et type de poids.
+- Vignette de l'image normalisee envoyee au modele pour comprendre le pre-traitement.
+- Vitesse d'inference adaptee a l'exploration interactive.
+
+> Astuce : le code est prepare pour switcher facilement entre `digits` (8x8) et MNIST (28x28) depuis `fetch_openml` en adaptant le reshape et le scaler dans `app.py`.
