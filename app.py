@@ -8,6 +8,11 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KNeighborsClassifier
 from streamlit_drawable_canvas import st_canvas
+import joblib
+
+@st.cache_resource
+def load_model():
+    return joblib.load("model_knn_best.joblib") # ou model_knn_pca.joblib
 
 if "predicted" not in st.session_state:
     st.session_state["predicted"] = False
