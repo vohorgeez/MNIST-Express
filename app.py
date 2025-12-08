@@ -1,18 +1,25 @@
-import io
 import numpy as np
 import matplotlib.pyplot as plt
 import streamlit as st
 from PIL import Image
 from sklearn.datasets import load_digits
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from sklearn.neighbors import KNeighborsClassifier
 from streamlit_drawable_canvas import st_canvas
 import joblib
 
 @st.cache_resource
-def load_model():
-    return joblib.load("model_knn_best.joblib") # ou model_knn_pca.joblib
+def load_model(mode="best"):
+    if mode == "best":
+        return joblib.load("model_knn_best.joblib")
+    else:
+        return joblib.load("model_knn_pca.joblib")
+
+mode = st.sidebar.selectbox(
+    "Modèle utilisé",
+    ("Précision maximale", "Rapidité (PCA)"),
+)
+
+model_key = "best" if mode == "Précision maximale" else "pca"
+model = load_model(model_key)
 
 if "predicted" not in st.session_state:
     st.session_state["predicted"] = False
@@ -70,35 +77,14 @@ def preprocess_canvas_image(image: np.ndarray) -> np.ndarray:
     return arr
 
 @st.cache_resource
-def train_model(k: int, metric: str, weights: str):
-    digits = load_digits()
-    X_train, X_test, y_train, y_test = train_test_split(
-        digits.data, digits.target, test_size=0.2, random_state=42, stratify=digits.target
-    )
-    scaler = StandardScaler()
-    X_train = scaler.fit_transform(X_train)
-    clf = KNeighborsClassifier(n_neighbors=k, weights=weights, metric=metric)
-    clf.fit(X_train, y_train)
-    return clf, scaler, digits
+def load_digits_data():
+    return load_digits()
+
+digits = load_digits_data()
 
 st.set_page_config(page_title="MNIST Express", page_icon="🧠")
 
 st.title("MNIST Express - k-NN digits classifier")
-k = st.slider("Number of neighbors", min_value=1, max_value=15, value=5, step=2)
-
-metric = st.selectbox(
-    "Distance",
-    options=["euclidean", "manhattan", "chebyshev"],
-    index=0,
-)
-
-weights = st.selectbox(
-    "Poids",
-    options=["uniform", "distance"],
-    index=1, # par défaut "distance"
-)
-
-clf, scaler, digits = train_model(k, metric, weights)
 
 st.subheader("Data sample")
 cols = st.columns(6)
@@ -123,9 +109,9 @@ top_k = st.slider("Afficher les top-k classes", min_value=1, max_value=10, value
 if canvas.image_data is not None:
     if st.button("Prédire"):
         raw_8x8 = preprocess_canvas_image(canvas.image_data)
-        sample = scaler.transform(raw_8x8)
+        sample = raw_8x8 # le pipeline s'occupe du reste
 
-        probas = clf.predict_proba(sample)[0]
+        probas = model.predict_proba(sample)[0]
 
         st.session_state["predicted"] = True
         st.session_state["raw_8x8"] = raw_8x8
@@ -153,7 +139,7 @@ if canvas.image_data is not None:
             st.pyplot(fig)
 
         if st.checkbox("Voir l'image 8x8 AVANT scaler"):
-            before_scale = preprocess_canvas_image(canvas.image_data)
+            before_scale = raw_8x8
             fig, ax = plt.subplots()
             ax.imshow(before_scale.reshape(8, 8), cmap="gray")
             ax.axis("off")
