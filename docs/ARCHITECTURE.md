@@ -82,3 +82,42 @@ Elle doit :
 - Retourner un bundle structuré
 
 L'app Streamlit ne doit jamais charger un joblib directement.
+
+## Contrat interne : `ModelBundle`
+
+### Objectif
+
+Un seul objet "retour" standardisé pour:
+- l'inférence (Streamlit)
+- les tests smoke
+- les scripts de benchmark
+
+### Contenu minimal (ce que `load_run()` doit retourner)
+- `scaler`: objet sklearn (toujours présent)
+- `pca`: objet sklearn ou `None`
+- `model`: k-NN entraîné
+- `metadata`: dict chargé depuis `metadata.json`
+- `run_id` : string (redondant mais pratique)
+
+### Règles
+- Aucun fit dans ce bundle (que des objets déjà fit).
+- `metadata` est la source de vérité:
+    - PCA activée ou non
+    - chemins relatifs
+    - config du modèle
+    - seed / split info
+- Le bundle doit exposer un accès simple au "chemin racine du run" (soit via `matadata["paths"]`, soit un champ dédié).
+
+## Contrat fonctionnel : API d'inférence
+Pour éviter que Streamlit réimplémente le pipeline à sa sauce, `inference.py` doit offrir une fonction unique:
+- `predict_one(bundle, x)` retourne un objet résultat structuré, par ex:
+    - `pred_label`
+    - `latency_ms`
+    - `neighbors` / `distances` si mode debug activé
+
+### Règles
+- `predict_one` applique exactement l'ordre:
+    1. scaler.transform
+    2. pca.transform (si `bundle.pca` non-None)
+    3. model.predict
+- Mesure latence au plus près de la prédiction.
