@@ -23,6 +23,12 @@ But : vérifier la structure `artifacts/runs/<run_id>/`.
 But : éviter une config incohérente (ex PCA on sans n_components, algo invalide).
 - DoD : validation lève une exception claire
 
+## U5 - Metadata coherence
+But : garantir la cohérence entre metadata.json et les artefacts présents.
+- Vérifier que les chemins référencés existent
+- Vérifier que les champs obligatoires sont présents
+- DoD : erreur explicite si incohérence
+
 # Tests d'intégration
 
 ## I1 - Train -> Save -> Load -> Predict (round-trip)
@@ -57,12 +63,21 @@ But : une prédiction sur un seul sample marche.
 - Input : un sample du dataset
 - DoD : retourne label int + latency_ms
 
+## S3 - Artefact manquant
+- Supprimer volontairement `pca.joblib`
+- Appeler `load_run()`
+- DoD : erreur claire et explicite
+
 # Tests de performance (locaux, non bloquants CI)
 
 ## P1 - Latence inference p95
 But : vérifier que p95 respecte le seuil.
 - Faire N prédictions (ex 200)
 - Mesurer latence
+- Mesure incluant preprocessing
+- Exclure première prédiction (warm-up)
+- N >= 200
+- Moyenne et p95 calculés
 - DoD : p95 < seuil défini dans SPEC (100ms)
 
 ## P2 - Comparatif variantes
