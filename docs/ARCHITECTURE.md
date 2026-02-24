@@ -30,3 +30,55 @@
 - `config.py`
     - Responsabilité : hyperparamètres, choix variante, seed, chemins artefacts
     - Ne doit pas : charger les artefacts
+
+## Flux d'entraînement (offline)
+Objectif : produire un run versionné immuable.
+
+Etapes:
+    1. Chargement du dataset via `data.py`
+    2. Split train / test avec seed fixé (`config.py`)
+    3. Fit du scaler sur `X_train`
+    4. Si PCA activée :
+        - Fit PCA sur `X_train` déjà scalé
+    5. Entraînement du k-NN selon la variante (`config.py`)
+    6. Evaluation via `metrics.py`
+    7. Génération d'un `run_id`
+    8. Création du dossier `artifacts/runs/<run_id>/`
+    9. Sauvegarde :
+        - scaler
+        - PCA (si activée)
+        - modèle
+        - metadata.json
+        - metrics.json
+
+Règle critique :
+Aucun objet fit sur `X_test`.
+
+## Flux d'inférence (online)
+Objectif : prédire sans modifier les artefacts
+
+Etapes :
+    1. Sélection d'un run (`latest`, `best`, ou `run_id` explicite)
+    2. Chargement cohérent via `persistence.py`
+    3. Image utilisateur -> flatten
+    4. `scaler.transform`
+    5. Si PCA activée -> `pca.transform`
+    6. `model.predict`
+    7. Mesure latence
+    8. Logging usage / erreurs via `monitoring.py`
+
+Règle critique :
+Aucun `.fit()` autorisé.
+
+## Contrat de chargement d'un run
+`persistence.py` doit exploser une seule fonction publique du type :
+- `load_run(run_id=None, alias="latest")`
+
+Elle doit :
+- Lire `metadata.json`
+- Charger scaler
+- Charger PCA si activée
+- Charger modèle
+- Retourner un bundle structuré
+
+L'app Streamlit ne doit jamais charger un joblib directement.
