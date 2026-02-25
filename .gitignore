@@ -6,3 +6,18 @@ sklearn-env/
 # Python
 __pycache__/
 *.pyc
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# --- IDE / OS ---
+.vscode/
+.idea/
+.DS_STORE
+
+# --- Streamlit ---
+.streamlit/
