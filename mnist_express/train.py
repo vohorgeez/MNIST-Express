@@ -21,5 +21,8 @@ def train_knn(
         model.fit(X, y)
         fit_duration = 0.0
     n_samples, n_features = X.shape
-    logger.info("k = %d \n metric = %s \n algorithm = %s \n n_samples = %d \n n_features = %d \n fit_duration = %d", settings.knn_k, settings.knn_metric, settings.knn_algorithm, n_samples, n_features, fit_duration)
+    if fit_duration > 0:
+        logger.info("k = %d | metric = %s | algorithm = %s | n_samples = %d | n_features = %d | fit_duration = %.6f", settings.knn_k, settings.knn_metric, settings.knn_algorithm, n_samples, n_features, fit_duration)
+    else:
+        logger.info("k = %d | metric = %s | algorithm = %s | n_samples = %d | n_features = %d", settings.knn_k, settings.knn_metric, settings.knn_algorithm, n_samples, n_features)
     return model, fit_duration
