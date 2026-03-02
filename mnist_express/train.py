@@ -81,3 +81,41 @@ def train_knn_pipeline(
     )
 
     return pipe, fit_duration, predict_duration, acc, explained
+
+def compare_plain_vs_pca(
+        X_train,
+        y_train,
+        X_test,
+        y_test,
+        settings: Settings
+):
+    results = {}
+
+    # --- Plain ---
+    settings.enable_pca = False
+    model_plain, fit_plain, pred_plain, acc_plain, _ = train_knn_pipeline(
+        X_train, y_train, X_test, y_test, settings
+    )
+
+    results["plain"] = {
+        "model": model_plain,
+        "fit_time": fit_plain,
+        "predict_time": pred_plain,
+        "accuracy": acc_plain
+    }
+
+    # --- PCA ---
+    settings.enable_pca = True
+    model_pca, fit_pca, pred_pca, acc_pca, explained = train_knn_pipeline(
+        X_train, y_train, X_test, y_test, settings
+    )
+
+    results["pca"] = {
+        "model": model_pca,
+        "fit_time": fit_pca,
+        "predict_time": pred_pca,
+        "accuracy": acc_pca,
+        "explained_variance": explained
+    }
+
+    return results
