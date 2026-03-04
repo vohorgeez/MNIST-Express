@@ -21,3 +21,6 @@ build/
 
 # --- Streamlit ---
 .streamlit/
+
+# Generated
+artifacts/metrics/
