@@ -16,3 +16,19 @@ def plot_explained_variance(explained_variance):
     plt.grid(True)
     plt.tight_layout()
     plt.show()
+
+def accuracy_per_class(y_true, y_pred, labels=None) -> dict[int, float]:
+    if labels is None:
+        labels = range(10)
+    results = {}
+    y_true = np.asarray(y_true)
+    y_pred = np.asarray(y_pred)
+    for c in labels:
+        total = np.sum(y_true == c)
+        if total == 0:
+            accuracy = np.nan
+        else:
+            correct = np.sum((y_true == c) & (y_pred == c))
+            accuracy = correct / total
+        results[c] = accuracy
+    return results
