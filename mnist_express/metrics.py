@@ -103,5 +103,5 @@ def export_metrics(metrics: dict, path: str):
 
     payload = _to_jsonable(metrics)
 
-    with open(path, "W", encoding="utf-8") as f:
+    with open(path, "w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2, ensure_ascii=False)
