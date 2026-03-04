@@ -1,6 +1,9 @@
 from sklearn.metrics import accuracy_score
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
+import json
+from pathlib import Path
 
 def accuracy(y_true, y_pred) -> float:
     return accuracy_score(y_true, y_pred)
@@ -32,3 +35,46 @@ def accuracy_per_class(y_true, y_pred, labels=None) -> dict[int, float]:
             accuracy = correct / total
         results[c] = accuracy
     return results
+
+def compute_confusion_matrix(y_true, y_pred, labels=None) -> np.ndarray:
+    y_true = np.asarray(y_true)
+    y_pred = np.asarray(y_pred)
+
+    if labels is None:
+        labels = range(10)
+
+    cm = confusion_matrix(
+        y_true,
+        y_pred,
+        labels=list(labels)
+    )
+
+    return cm
+
+def weakest_classes(cm: np.ndarray, labels=None, top_k=3):
+    if labels is None:
+        labels = range(cm.shape[0])
+
+    cm = np.asarray(cm)
+
+    true_counts = cm.sum(axis=1)
+    correct = np.diag(cm)
+
+    recall = np.divide(
+        correct,
+        true_counts,
+        out=np.full_like(correct, np.nan, dtype=float),
+        where=true_counts != 0
+    )
+
+    results = {label: r for label, r in zip(labels, recall)}
+
+    weakest = sorted(results.items(), key=lambda x: x[1])[:top_k]
+
+    return results, weakest
+
+def export_metrics(metrics: dict, path: str):
+    path = Path(path)
+
+    with open(path, "w") as f:
+        json.dump(metrics, f, indent=2)
