@@ -5,7 +5,13 @@ import time
 import logging
 from sklearn.decomposition import PCA
 from sklearn.pipeline import Pipeline
-from .metrics import accuracy
+from .metrics import (
+    accuracy,
+    accuracy_per_class,
+    compute_confusion_matrix,
+    weakest_classes,
+    export_metrics,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +70,35 @@ def train_knn_pipeline(
     y_pred_full = pipe.predict(X_test)
     acc = accuracy(y_test, y_pred_full)
 
+    acc_per_class = accuracy_per_class(y_test, y_pred_full, labels=range(10))
+    cm = compute_confusion_matrix(y_test, y_pred_full, labels=range(10))
+    recall_per_class, weakest = weakest_classes(cm, labels=range(10), top_k=3)
+
+    report = {
+        "pca_enabled": settings.enable_pca,
+        "knn": {
+            "k": settings.knn_k,
+            "algorithm": settings.knn_algorithm,
+            "metric": settings.knn_metric,
+        },
+        "timing_sec": {
+            "fit": fit_duration,
+            "predict_bench": predict_duration,
+            "bench_n_queries": settings.bench_n_queries,
+        },
+        "metrics": {
+            "accuracy_global": acc,
+            "accuracy_per_class": acc_per_class,
+            "recall_per_class": recall_per_class,
+            "weakest_classes": weakest,
+            "confusion_matrix": cm
+        }
+    }
+
+    tag = "pca" if settings.enable_pca else "plain"
+    export_metrics(report, f"artifacts/metrics/report_{tag}.json")
+    np.savetxt(f"artifacts/metrics/confusion_{tag}.csv", cm, fmt="%d", delimiter=",")
+
     # --- Explained variance ---
     if settings.enable_pca:
         explained = pipe.named_steps["pca"].explained_variance_ratio_
@@ -79,6 +114,8 @@ def train_knn_pipeline(
         predict_duration,
         acc
     )
+
+    logger.info("Weakest classes (by recall): %s", weakest)
 
     return pipe, fit_duration, predict_duration, acc, explained
 
