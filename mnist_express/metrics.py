@@ -78,3 +78,30 @@ def export_metrics(metrics: dict, path: str):
 
     with open(path, "w") as f:
         json.dump(metrics, f, indent=2)
+
+def _to_jsonable(obj):
+    #numpy scalars -> python scalars
+    if isinstance(obj, (np.integer,)):
+        return int(obj)
+    if isinstance(obj, (np.floating,)):
+        v = float(obj)
+        return None if np.isnan(v) else v
+    if isinstance(obj, (np.ndarray,)):
+        return [_to_jsonable(x) for x in obj.tolist()]
+    if isinstance(obj, dict):
+        return {str(k): _to_jsonable(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_to_jsonable(x) for x in obj]
+    # plain float nan
+    if isinstance(obj, float) and np.isnan(obj):
+        return None
+    return obj
+
+def export_metrics(metrics: dict, path: str):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    payload = _to_jsonable(metrics)
+
+    with open(path, "W", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2, ensure_ascii=False)
