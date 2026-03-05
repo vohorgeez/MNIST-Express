@@ -11,6 +11,7 @@ from .metrics import (
     compute_confusion_matrix,
     weakest_classes,
     export_metrics,
+    plot_confusion_matrix
 )
 
 logger = logging.getLogger(__name__)
@@ -96,6 +97,10 @@ def train_knn_pipeline(
     }
 
     tag = "pca" if settings.enable_pca else "plain"
+    plot_confusion_matrix(
+        cm,
+        save_path=f"artifacts/metrics/confusion_{tag}.png"
+    )
     export_metrics(report, f"artifacts/metrics/report_{tag}.json")
     np.savetxt(f"artifacts/metrics/confusion_{tag}.csv", cm, fmt="%d", delimiter=",")
 

@@ -105,3 +105,39 @@ def export_metrics(metrics: dict, path: str):
 
     with open(path, "w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2, ensure_ascii=False)
+
+def plot_confusion_matrix(cm: np.ndarray, save_path: str | None = None):
+    """
+    Affiche et/ou sauvegarde une confusion matrix sous forme de heatmap.
+    """
+
+    fig, ax = plt.subplots(figsize=(8, 8))
+
+    im = ax.imshow(cm, interpolation="nearest")
+    ax.figure.colorbar(im, ax=ax)
+
+    ax.set(
+        xticks=np.arange(10),
+        yticks=np.arange(10),
+        xlabel="Predicted label",
+        ylabel="True label",
+        title="Confusion Matrix"
+    )
+
+    # annotation des cellules
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+            ax.text(
+                j,
+                i,
+                int(cm[i, j]),
+                ha="center",
+                va="center",
+                fontsize=8
+            )
+
+    plt.tight_layout()
+
+    if save_path:
+        Path(save_path).parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(save_path, dpi=200)
