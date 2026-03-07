@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from mnist_express.preprocessing import preprocess_user_drawing
 
 from mnist_express.preprocessing import (
     to_canonical_X,
@@ -100,3 +101,46 @@ def test_inference_transform_pca_on_user_input_ok():
 def test_build_preprocessor_requires_n_components_when_pca_enabled():
     with pytest.raises(ValueError):
         build_preprocessor(pca_enabled=True, n_components=None)
+
+# Preprocess
+
+def test_preprocess_empty_canvas():
+    # arrange
+    empty = np.zeros((100, 100), dtype=np.uint8)
+
+    # act
+    img = preprocess_user_drawing(empty)
+
+    # assert
+    assert isinstance(img, np.ndarray)
+    assert img.shape == (28, 28)
+    assert np.sum(img) == 0
+
+def test_preprocess_returns_28x28():
+    # arrange
+    img_in = np.zeros((120, 80), dtype=np.uint8)
+    img_in[40:80, 20:40] = 255
+
+    # act
+    img = preprocess_user_drawing(img_in)
+
+    # assert
+    assert isinstance(img, np.ndarray)
+    assert img.shape == (28, 28)
+
+def test_preprocess_offcenter_digit():
+    # arrange
+    img_in = np.zeros((100, 100), dtype=np.uint8)
+    img_in[10:25, 10:25] = 255 # potit carré en haut à gauche
+
+    # act
+    img = preprocess_user_drawing(img_in)
+
+    # centre de masse approximatif
+    ys, xs = np.where(img > 0)
+    cy = ys.mean()
+    cx = xs.mean()
+
+    # assert : proche du centre de l'image
+    assert abs(cx - 14) < 4
+    assert abs(cy - 14) < 4
