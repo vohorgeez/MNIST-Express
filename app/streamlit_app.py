@@ -5,26 +5,34 @@ import streamlit as st
 import matplotlib.pyplot as plt
 
 from streamlit_drawable_canvas import st_canvas
-
 from mnist_express.config import Settings
-from mnist_express.preprocessing import preprocess_user_drawing, transform_inference
+from mnist_express.preprocessing import preprocess_user_drawing
 from mnist_express.inference import predict_knn, extract_prediction_summary
 
 MODEL_PATH = "artifacts/models/model_knn_best.joblib"
-PREPROCESSOR_PATH = "artifacts/models/preprocessor.joblib"
 
 @st.cache_resource
-def load_artifacts():
+def load_model():
     if not os.path.exists(MODEL_PATH):
         raise FileNotFoundError(f"Model file not found: {MODEL_PATH}")
+    return joblib.load(MODEL_PATH)
+
+def extract_grayscale_from_canvas(canvas_image: np.ndarray) -> np.ndarray:
+    """
+    Convert RGBA canvas image to grayscale-like 2D image.
+    The drawing is white on black, so one RGB channel is enough.
+    """
+    if canvas_image is None:
+        return np.zeros((280, 280), dtype=np.uint8)
     
-    model = joblib.load(MODEL_PATH)
+    if canvas_image.ndim != 3 or canvas_image.shape[2] < 3:
+        raise ValueError("Canvas image must be RGB/RGBA")
+    
+    gray = canvas_image[:, :, 0]
+    return gray.astype(np.uint8)
 
-    preprocessor = None
-    if os.path.exists(PREPROCESSOR_PATH):
-        preprocessor = joblib.load(PREPROCESSOR_PATH)
-
-    return model, preprocessor
+def is_canvas_empty(img: np.ndarray) -> bool:
+    return img is None or np.max(img) == 0
 
 def plot_preprocessed_image(img_28x28: np.ndarray):
     fig, ax = plt.subplots(figsize=(3, 3))
@@ -33,22 +41,19 @@ def plot_preprocessed_image(img_28x28: np.ndarray):
     ax.axis("off")
     return fig
 
-def is_canvas_empty(img: np.ndarray) -> bool:
-    return img is None or np.max(img) == 0
-
-def extract_grayscale_from_canvas(canvas_image: np.ndarray) -> np.ndarray:
-    """
-    canvas_image shape expected: (H, W, 4) RGBA
-    We keep only one channel because the drawing is white on black.
-    """
-    if canvas_image is None:
-        return np.zeros((280, 280), dtype=np.uint8)
+def get_expected_n_features(model) -> int | None:
+    if hasattr(model, "named_steps"):
+        if "knn" in model.named_steps and hasattr(model.named_steps["knn"], "n_features_in_"):
+            return model.named_steps["knn"].n_features_in_
+        
+        for _, step in reversed(model.steps):
+            if hasattr(step, "n_features_in_"):
+                return step.n_features_in_
+            
+    if hasattr(model, "n_features_in_"):
+        return model.n_features_in_
     
-    if canvas_image.ndim != 3 or canvas_image.shape[2] < 3:
-        raise ValueError("Canvas image must be RGBA or RGB.")
-    
-    grayscale = canvas_image[:, :, 0]
-    return grayscale.astype(np.uint8)
+    return None
 
 def main():
     st.set_page_config(page_title="MNIST Express", layout="wide")
@@ -56,24 +61,33 @@ def main():
     st.write("Dessine un chiffre, puis lance la prédiction.")
 
     settings = Settings()
-    model, preprocessor = load_artifacts()
+    model = load_model()
 
-    col_left, col_right = st.columns([1, 1])
+    expected_n_features = get_expected_n_features(model)
+    st.caption(f"Modèle chargé: {expected_n_features} features")
+
+    col_left, col_right = st.columns(2)
 
     with col_left:
         st.subheader("Canvas")
-        stroke_width = st.slider("Epaisseur du trait", min_value=8, max_value=30, value=18)
+
+        stroke_width = st.slider(
+            "Epaisseur du trait",
+            min_value=8,
+            max_value=30,
+            value=18,
+        )
 
         canvas_result = st_canvas(
             fill_color="rgba(255, 255, 255, 1.0)",
             stroke_width=stroke_width,
-            stroke_color="#FFFFFF"
+            stroke_color="#FFFFFF",
             background_color="#000000",
             update_streamlit=True,
             height=280,
             width=280,
             drawing_mode="freedraw",
-            key="mnist_canvas"
+            key="mnist_canvas",
         )
 
         predict_clicked = st.button("Prédire", type="primary")
@@ -93,11 +107,7 @@ def main():
                 return
             
             preprocessed_img = preprocess_user_drawing(gray)
-
-            if preprocessor is not None:
-                X_input = transform_inference(preprocessor, preprocessed_img)
-            else:
-                X_input = preprocessed_img.reshape(1, 784).astype(np.float64)
+            X_input = preprocessed_img.reshape(1, 784).astype(np.float64)
 
             predictions, probabilities, predict_duration = predict_knn(
                 model=model,
@@ -124,7 +134,6 @@ def main():
             fig = plot_preprocessed_image(preprocessed_img)
             st.pyplot(fig)
 
-            st.write("Vecteur d'entrée")
             st.caption(f"Shape envoyée au modèle : {X_input.shape}")
 
 if __name__ == "__main__":

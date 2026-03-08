@@ -7,7 +7,7 @@ class Settings:
     knn_algorithm: str = "brute"
     enable_timing: bool = True
     model_dir: str = "artifacts/models"
-    model_filename: str = "model_knn.joblib"
+    model_filename: str = "model_knn_best.joblib"
     log_level: str = "INFO"
     enable_pca: bool = False
     pca_n_components: float | int = 0.95

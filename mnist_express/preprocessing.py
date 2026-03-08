@@ -201,7 +201,7 @@ def preprocess_user_drawing(draw: np.ndarray) -> np.ndarray:
     resized = resize(draw, bounding_box)
 
     # normalize
-    resized = resized.astype(np.float32) / 255.0
+    resized = resized.astype(np.float32)
 
     mass_center = calculate_mass_center(resized)
 

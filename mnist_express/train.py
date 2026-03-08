@@ -23,27 +23,27 @@ def train_knn_pipeline(
         y_test: np.ndarray,
         settings: Settings
 ):
-    # --- PCA step ---
+    steps = []
+
     if settings.enable_pca:
-        pca_step = PCA(
-            n_components=settings.pca_n_components,
-            random_state=settings.pca_random_state
+        steps.append((
+            "pca",
+            PCA(
+                n_components=settings.pca_n_components,
+                random_state=settings.pca_random_state
+            )
+        ))
+
+    steps.append((
+        "knn",
+        KNeighborsClassifier(
+            n_neighbors=settings.knn_k,
+            algorithm=settings.knn_algorithm,
+            metric=settings.knn_metric
         )
-    else:
-        pca_step = "passthrough"
-
-    # --- KNN step ---
-    knn_step = KNeighborsClassifier(
-        n_neighbors=settings.knn_k,
-        algorithm=settings.knn_algorithm,
-        metric=settings.knn_metric
-    )
-
-    # --- Pipeline ---
-    pipe = Pipeline([
-        ("pca", pca_step),
-        ("knn", knn_step)
-    ])
+    ))
+    
+    pipe = Pipeline(steps)
 
     # --- Fit timing ---
     if settings.enable_timing:
