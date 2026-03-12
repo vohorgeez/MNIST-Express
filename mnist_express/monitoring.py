@@ -33,13 +33,20 @@ def load_usage_stats(settings: Settings) -> UsageStats:
     path = get_monitoring_path(settings)
 
     if not path.exists():
-        logger.info("Monitoring file does not exist yes: %s", path)
+        logger.info("Monitoring file does not exist yet: %s", path)
         return UsageStats()
     
-    with path.open("r", encoding="utf-8") as f:
-        raw = json.load(f)
-
-    return UsageStats(**raw)
+    try:
+        with path.open("r", encoding="utf-8") as f:
+            raw = json.load(f)
+        return UsageStats(**raw)
+    except (json.JSONDecodeError, TypeError, ValueError) as e:
+        logger.warning(
+            "Failed to load monitoring stats from %s: %s | using defaults",
+            path,
+            e,
+        )
+        return UsageStats()
 
 def save_usage_stats(settings: Settings, stats: UsageStats) -> None:
     ensure_monitoring_dir(settings)
