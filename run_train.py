@@ -12,7 +12,7 @@ def main():
         random_state=42,
     )
 
-    pipe, fit_time, pred_time, acc, explained = train_knn_pipeline(
+    pipe, fit_time, pred_time, acc, explained, report = train_knn_pipeline(
         X_train,
         y_train,
         X_test,
@@ -26,6 +26,7 @@ def main():
     print(f"Fit time: {fit_time:.6f} sec")
     print(f"Predict bench time: {pred_time:.6f} sec")
     print(f"Saved model to: {save_path}")
+    print(f"Bench QPS: {report['timing_sec']['queries_per_sec']:.2f}")
 
     if explained is not None:
         print(f"PCA components kept: {len(explained)}")
