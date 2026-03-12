@@ -17,24 +17,48 @@ def predict_knn(
     Returns:
         predictions: np.ndarray shape (n,)
         probabilities: np.ndarray shape (n, n_classes)
-        predict_duration: float
+        predict_duration: float (seconds)
     """
+    X = np.asarray(X)
+
+    if X.ndim != 2:
+        raise ValueError("X must be a 2D array of shape (n_samples, n_features).")
+    
+    batch_size = settings.inference_batch_size
+    if batch_size <= 0:
+        raise ValueError("inference_batch_size must be > 0.")
+    
+    predictions_batches = []
+    probabilities_batches = []
+
     if settings.enable_timing:
         start = time.perf_counter()
-        predictions = model.predict(X)
-        probabilities = model.predict_proba(X)
+
+    for start_idx in range(0, X.shape[0], batch_size):
+        end_idx = start_idx + batch_size
+        X_batch = X[start_idx:end_idx]
+
+        batch_predictions = model.predict(X_batch)
+        batch_probabilities = model.predict_proba(X_batch)
+
+        predictions_batches.append(batch_predictions)
+        probabilities_batches.append(batch_probabilities)
+
+    if settings.enable_timing:
         end = time.perf_counter()
         predict_duration = end - start
     else:
-        predictions = model.predict(X)
-        probabilities = model.predict_proba(X)
         predict_duration = 0.0
+
+    predictions = np.concatenate(predictions_batches, axis=0)
+    probabilities = np.concatenate(probabilities_batches, axis=0)
 
     if predict_duration > 0:
         logger.info(
-            "queries = %d | n_features = %d | k = %d | metric = %s | algorithm = %s | predict_duration = %.6f sec",
+            "predict_done | queries=%d | n_features=%d | batch_size=%d | k=%d | metric=%s | algorithm=%s | predict_duration_sec=%.6f",
             X.shape[0],
             X.shape[1],
+            batch_size,
             settings.knn_k,
             settings.knn_metric,
             settings.knn_algorithm,
@@ -42,9 +66,10 @@ def predict_knn(
         )
     else:
         logger.info(
-            "queries = %d | n_features = %d | k = %d | metric = %s | algorithm = %s",
+            "predict_done | queries=%d | n_features=%d | batch_size=%d | k=%d | metric=%s | algorithm=%s",
             X.shape[0],
             X.shape[1],
+            batch_size,
             settings.knn_k,
             settings.knn_metric,
             settings.knn_algorithm,
@@ -77,6 +102,9 @@ def extract_prediction_summary(
     
     if not (0 <= sample_index < len(predictions)):
         raise IndexError("sample_index out of range.")
+    
+    if top_k <= 0:
+        raise ValueError("top_k must be > 0.")
     
     pred_class = int(predictions[sample_index])
     proba_row = probabilities[sample_index]
