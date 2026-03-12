@@ -66,7 +66,7 @@ def plot_preprocessed_image(img_28x28: np.ndarray):
 def get_expected_n_features(model) -> int | None:
     if hasattr(model, "named_steps"):
         if "knn" in model.named_steps and hasattr(model.named_steps["knn"], "n_features_in_"):
-            return model.named_steps["knn"].n_feaatures_in_
+            return model.named_steps["knn"].n_features_in_
         
         for _, step, in reversed(model.steps):
             if hasattr(step, "n_features_in_"):
