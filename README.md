@@ -1,10 +1,51 @@
 # MNIST Express
 
-MNIST Express est une mini-application qui entraine un classifieur k-NN sur le dataset `load_digits` de scikit-learn (8x8) tout en restant compatible avec MNIST 28x28. Le notebook `mnist_knn.ipynb` charge les donnees, normalise les features, entraine deux variantes de k-NN (standard et PCA), mesure la performance (accuracy, classification report, matrice de confusion) et exporte les artefacts `model_knn_best.joblib` et `model_knn_pca.joblib` consommes par la mini-app Streamlit.
+MNIST Express est une mini-application qui entraine un classifieur k-NN sur le dataset MNIST 28x28. Le notebook `mnist_knn.ipynb` charge les donnees, normalise les features, entraine deux variantes de k-NN (standard et PCA), mesure la performance (accuracy, classification report, matrice de confusion) et exporte les artefacts `model_knn_best.joblib` et `model_knn_pca.joblib` consommes par la mini-app Streamlit.
 
 ## Version deployee
 
 L'application Streamlit est accessible ici : https://mnist-express.streamlit.app/
+
+## Nouveautes v4 - benchmark et inference robuste
+
+La version v4 introduit une instrumentation plus proche d'un contexte production :
+
+- **Benchmark des algorithmes k-NN** (`bute`, `kd_tree`, `ball_tree`)
+- **Benchmark du batching d'inférence**
+- **Monitoring simple des usages**
+- **Logs structurés**
+- **Mini instrumentation dans l'app Streamlit**
+
+### Résultat du benchmark des algorithmes
+
+Un benchmark comparatif a été réalisé sur un sous-ensemble borné du dataset MNIST afin de comparer les performances des différentes stratégies de recherche de voisins.
+
+Résultat observé :
+
+Algorithme  Accuracy    Predict time    QPS
+brute       ~0.949      ~4.6 s          ~110
+kd_tree     ~0.949      ~9.1 s          ~56
+ball_tree   ~0.949      ~7.2 s          ~70
+
+Conclusion :
+- les trois algorithmes produisent **la même accuracy**
+- sur MNIST (784 dimensions), **`brute` est le plus performant**
+- les structures d'indexation spatiale (`kd_tree`, `ball_tree`) perdent leur avantage en haute dimension
+
+Le modèle retenu par défaut est donc :
+algorithm = "brute"
+
+### Impact du batching d'inférence
+
+Le batching améliore fortement le débit d'inférence :
+
+Batch size  Queries / sec
+1           ~30
+64          ~1100
+256         ~1580
+1024        ~1750
+
+Le batching est donc activé dans le pipeline d'inférence pour améliorer les performances en usage réel.
 
 ## Nouveautes v3 - pipeline digits & double modele
 
