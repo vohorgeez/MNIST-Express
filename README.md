@@ -1,43 +1,130 @@
 # MNIST Express
 
-MNIST Express est une mini-application qui entraine un classifieur k-NN sur le dataset MNIST 28x28. Le notebook `mnist_knn.ipynb` charge les donnees, normalise les features, entraine deux variantes de k-NN (standard et PCA), mesure la performance (accuracy, classification report, matrice de confusion) et exporte les artefacts `model_knn_best.joblib` et `model_knn_pca.joblib` consommes par la mini-app Streamlit.
+MNIST Express est une mini-application pédagogique autour du classifieur **k-Nearest Neighbors** appliqué au dataset **MNIST (28×28)**.
 
-## Version deployee
+Le projet explore plusieurs aspects d’un pipeline ML complet :
 
-L'application Streamlit est accessible ici : https://mnist-express.streamlit.app/
+- entraînement et évaluation d’un modèle k-NN
+- comparaison des algorithmes (`brute`, `kd_tree`, `ball_tree`)
+- optimisation de l’inférence par **batching**
+- instrumentation simple (monitoring et logs)
+- interface interactive via **Streamlit**
 
-## Nouveautes v4 - benchmark et inference robuste
+L’application permet de **dessiner un chiffre à la main et obtenir une prédiction en temps réel**.
 
-La version v4 introduit une instrumentation plus proche d'un contexte production :
+## Demo
 
-- **Benchmark des algorithmes k-NN** (`bute`, `kd_tree`, `ball_tree`)
-- **Benchmark du batching d'inférence**
-- **Monitoring simple des usages**
-- **Logs structurés**
-- **Mini instrumentation dans l'app Streamlit**
+Application Streamlit :
 
-### Résultat du benchmark des algorithmes
+https://mnist-express.streamlit.app/
 
-Un benchmark comparatif a été réalisé sur un sous-ensemble borné du dataset MNIST afin de comparer les performances des différentes stratégies de recherche de voisins.
+L'utilisateur peut dessiner un chiffre sur un canvas et obtenir immédiatement :
+- la **classe prédite**
+- la **confiance du modèle**
+- les **top-k prédictions**
+- le **temps d'inférence**
 
-Résultat observé :
+## Overview
 
-Algorithme  Accuracy    Predict time    QPS
+Le projet couvre un pipeline ML complet :
+1. Chargement du dataset MNIST
+2. Pré-traitement des images dessinées par l'utilisateur
+3. Entraînement d'un modèle **k-NN**
+4. Benchmark des différentes stratégies d'indexation
+5. Optimisation des performances d'inférence
+6. Interface interactive Streamlit
+7. Monitoring simple de l'utilisation de l'application
+
+L'objectif du projet est **pédagogique** : comprendre concrètement les implications des choix d'architecture dans un pipeline ML.
+
+## Key Features
+
+### Entraînement k-NN
+- classification d'images MNIST (784 features)
+- calcul des métriques :
+    - accuracy
+    - recall par classe
+    - confusion matrix
+
+### Benchmark d'algorithmes
+Comparaison des stratégies de recherche de voisins :
+- `brute`
+- `kd_tree`
+- `ball_tree`
+
+### Batching d'inférence
+Optimisation du débit d'inférence en regroupant les prédictions par lots.
+
+### Monitoring simple
+Instrumentation minimale :
+- compteur d'usages
+- temps moyen d'inférence
+- taux d'erreur utilisateur (feedback)
+
+### Interface interactive
+Application Streamlit permettant :
+- de dessiner un chiffre
+- d'obtenir la prédiction en temps réel
+- d'observer les métriques du modèle
+
+## Architecture
+
+Structure principale du projet :
+
+```
+mnist_express/
+ ├── config.py          # configuration globale
+ ├── data.py            # chargement dataset MNIST
+ ├── preprocessing.py   # pipeline de transformation des dessins
+ ├── train.py           # entraînement et benchmark k-NN
+ ├── inference.py       # prédiction batchée
+ ├── monitoring.py      # instrumentation simple
+ ├── metrics.py         # métriques et confusion matrix
+ └── persistence.py     # sauvegarde des modèles
+```
+
+Application interactive :
+
+```
+app/
+ └── streamlit_app.py
+```
+
+Artefacts générés :
+
+```
+artifacts/
+ ├── models/
+ ├── metrics/
+ └── monitoring/
+```
+
+## Benchmark Results
+
+Un benchmark comparatif a été réalisé sur un sous-ensemble borné du dataset MNIST.
+
+Comparaison des algorithmes k-NN :
+
+Algorithm   Accuracy    Predict Time    QPS
 brute       ~0.949      ~4.6 s          ~110
 kd_tree     ~0.949      ~9.1 s          ~56
 ball_tree   ~0.949      ~7.2 s          ~70
 
-Conclusion :
-- les trois algorithmes produisent **la même accuracy**
-- sur MNIST (784 dimensions), **`brute` est le plus performant**
-- les structures d'indexation spatiale (`kd_tree`, `ball_tree`) perdent leur avantage en haute dimension
+### Conclusion
+
+Les trois algorithmes produisent **la même accuracy**, mais :
+- `brute` est **le plus rapide**
+- `kd_tree` et `ball_tree` n'apportent pas d'avantage dans cet espace de **784 dimensions**
 
 Le modèle retenu par défaut est donc :
+
+```
 algorithm = "brute"
+```
 
-### Impact du batching d'inférence
+## Impact du batching d'inférence
 
-Le batching améliore fortement le débit d'inférence :
+Le batching améliore fortement le débit :
 
 Batch size  Queries / sec
 1           ~30
@@ -45,67 +132,86 @@ Batch size  Queries / sec
 256         ~1580
 1024        ~1750
 
-Le batching est donc activé dans le pipeline d'inférence pour améliorer les performances en usage réel.
+Le pipeline d'innférence utilise donc le **batching** pour améliorer les performances.
 
-## Nouveautes v3 - pipeline digits & double modele
+## Installation
 
-- **Deux modeles embarques** : la barre laterale permet de charger instantanement `model_knn_best.joblib` (precision maximale) ou `model_knn_pca.joblib` (projection PCA 95% pour des predictions plus rapides).
-- **Pipeline canvas -> digits aligne** : recadrage + centrage automatique du trace, inversion du contraste puis resize en 8x8 avant remise a l'echelle [0,16] (equivalente a `load_digits`). Le meme code est reutilise dans le notebook pour garantir la parite batch/app.
-- **Outils de debug visuel** : echantillon des premiers digits affiche au dessus du canvas et checkboxes pour inspecter l'image 8x8 avant/apres passage dans le scaler.
-- **UX inference affinee** : slider top-k (1 -> 10) pour filtrer les predictions interessantes, memorisation de la derniere inference (session state) pour rejouer l'analyse sans redessiner et affichage clair des probabilites ordonnees.
+Pré-requis
+- Python <= 3.9
+- pip
 
-## Nouveautes v2 - UX interactive
-
-La v2 introduisait :
-
-- Une mini-app Streamlit avec canvas de dessin integre (via `streamlit-drawable-canvas`).
-- Un premier pipeline de pre-traitement unifie (resize 28x28, niveaux de gris, inversion optionnelle, normalisation dans [0,1]).
-- Un bouton `Predire` pour declencher l'inference en direct et afficher le label predit ainsi que les probabilites top-k.
-- Des controleurs pour explorer rapidement plusieurs variantes k-NN.
-- Une inference deja fluide pour des experiments rapides.
-
-## Pipeline de pre-traitement (v3)
-
-1. Recuperation de l'image RGBA du canvas puis passage en niveaux de gris.
-2. Inversion (noir sur fond blanc -> blanc sur fond noir) pour coller a la representation `load_digits`.
-3. Recadrage sur la bounding box du chiffre, padding pour le recentrer puis resize exact en 8x8 (PIL `Image.BOX`).
-4. Conversion `float32`, remise a l'echelle dans [0,16] (meme dynamique que `load_digits`) puis flatten en vecteur 1x64.
-5. Passage dans le scaler + k-NN deja entraine (mode precision ou PCA).
-
-Cette chaine est partagee entre la mini-app et le notebook afin de garantir des predictions coherentes.
-
-## Prerequis
-
-- Python >= 3.9 et pip.
-- Dependances : `scikit-learn`, `numpy`, `matplotlib`, `streamlit`, `streamlit-drawable-canvas`, `pillow`, `jupyter`, `joblib`...
-
-Installation rapide :
+Installation :
 
 ```
 pip install -r requirements.txt
 ```
 
-## Usage Notebook
+## Training
 
-1. `jupyter notebook` ou `jupyter lab` dans ce repertoire.
-2. Ouvrir `mnist_knn.ipynb`, executer toutes les cellules pour (re)generer les deux variantes k-NN et mettre a jour `model_knn_best.joblib` / `model_knn_pca.joblib`.
-3. Resultats attendus : precision ~97% (digits), matrice de confusion, comparaison des temps inference best vs PCA et vignettes mal classees.
-
-## UI Streamlit
-
-### Lancer la mini-app
+L'entraînement et le benchmark se lancent avec :
 
 ```
-streamlit run app.py
+python run_train.py
 ```
 
-### Fonctionnalites principales
+Le script :
+1. charge le dataset MNIST
+2. exécute le benchmark `brute / kd_tree / ball_tree`
+3. sélectione le meilleur modèle
+4. sauvegarde le modèle entraîné dans :
 
-- Apercu rapide des premiers digits du dataset pour calibrer le rendu attendu.
-- Selecteur de modele (precision maximale vs rapidite PCA) dans la sidebar.
-- Canvas libre 28x28 (redimensionne automatiquement) avec bouton `Predire`.
-- Slider `top-k` pour afficher les classes les plus probables et probabilites detaillees.
-- Checkboxes pour afficher l'image 8x8 envoyee au modele (avant et apres scaler) et comprendre l'impact du pipeline.
-- Inference rapide et fluide, meme en rejouant l'analyse sur la derniere prediction.
+```
+artifacts/models/model_knn_best.joblib
+```
 
-> Astuce : le code reste prepare pour switcher vers `fetch_openml("mnist_784")` (28x28) en adaptant le reshape/le scaler dans le notebook et `preprocess_canvas_image`.
+## Streamlit App
+
+Pour lancer l'interface interactive :
+
+```
+streamlit run app/streamlit_app.py
+```
+
+Fonctionnalités :
+- canvas de dessin
+- prédiction en temps réel
+- affichage des probabilités
+- métriques d'inférence
+- instrumentation simple
+
+## Monitoring
+
+Le projet inclut une instrumentation légère :
+- nombre total de prédictions
+- temps moyen d'inférence
+- nombre de feedbacks utilisateur
+- taux d'erreur utilisateur
+
+Les statistiques sont enregistrées dans :
+
+```
+artifacts/monitoring/usage_stats.json
+```
+
+## Project Evolution
+
+### v4 - Benchmark et instrumentation
+- benchmark `brute / kd_tree / ball_tree`
+- batching d'inférence
+- monitoring simple
+- logs structurés
+- amélioration de l'architecture
+
+### v3 - Pipeline digits
+- pipeline canvas -> digits
+- double modèle (standard + PCA)
+- debug visuel
+
+### v2 - Interface Streamlit
+- canvas de dessin
+- prédiction interactive
+- top-k predictions
+
+## License
+
+Projet pédagogique libre d'utilisation
