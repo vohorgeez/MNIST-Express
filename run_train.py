@@ -12,11 +12,16 @@ def main():
         random_state=42,
     )
 
+    X_train_bench = X_train[:settings.benchmark_train_size]
+    y_train_bench = y_train[:settings.benchmark_train_size]
+    X_test_bench = X_test[:settings.benchmark_test_size]
+    y_test_bench  = y_test[:settings.benchmark_test_size]
+
     results = benchmark_knn_algorithms(
-        X_train=X_train,
-        y_train=y_train,
-        X_test=X_test,
-        y_test=y_test,
+        X_train=X_train_bench,
+        y_train=y_train_bench,
+        X_test=X_test_bench,
+        y_test=y_test_bench,
         settings=settings,
     )
 
