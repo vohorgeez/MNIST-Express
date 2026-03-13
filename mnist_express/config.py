@@ -9,9 +9,9 @@ class Settings:
 
     # --- Timing / benchmark ---
     enable_timing: bool = True
-    bench_n_queries: int = 2000
+    bench_n_queries: int = 512
     benchmark_algorithms: tuple[str, ...] = ("brute", "kd_tree", "ball_tree")
-    benchmark_batch_sizes: tuple[int, ...] = (1, 16, 64, 256, 1024)
+    benchmark_batch_sizes: tuple[int, ...] = (16, 64, 256, 512)
 
     # --- Inference batching ---
     inference_batch_size: int = 256
