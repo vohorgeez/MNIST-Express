@@ -24,3 +24,7 @@ build/
 
 # Generated
 artifacts/metrics/
+
+# Models
+artifacts/models/*.joblib
+artifacts/monitoring/
