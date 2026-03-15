@@ -1,41 +1,38 @@
-from typing import Any
+from sklearn.neighbors import KNeighborsClassifier
+import numpy as np
+from .config import Settings
 import logging
 import time
 
-import numpy as np
-
-from .config import Settings
-
 logger = logging.getLogger(__name__)
 
-
 def predict_knn(
-    model: Any,
-    X: np.ndarray,
-    settings: Settings,
+        model: KNeighborsClassifier,
+        X: np.ndarray,
+        settings: Settings,
 ) -> tuple[np.ndarray, np.ndarray, float]:
     """
-    Predict classes for a batch of samples and return probabilities
-    along with total inference duration.
+    Predict classes and return class probabilities + inference time.
 
     Returns:
-        predictions: np.ndarray of shape (n_samples,)
-        probabilities: np.ndarray of shape (n_samples, n_classes)
-        predict_duration: float in seconds
+        predictions: np.ndarray shape (n,)
+        probabilities: np.ndarray shape (n, n_classes)
+        predict_duration: float (seconds)
     """
     X = np.asarray(X)
 
     if X.ndim != 2:
         raise ValueError("X must be a 2D array of shape (n_samples, n_features).")
-
+    
     batch_size = settings.inference_batch_size
     if batch_size <= 0:
         raise ValueError("inference_batch_size must be > 0.")
+    
+    predictions_batches = []
+    probabilities_batches = []
 
-    prediction_batches = []
-    probability_batches = []
-
-    start = time.perf_counter() if settings.enable_timing else None
+    if settings.enable_timing:
+        start = time.perf_counter()
 
     for start_idx in range(0, X.shape[0], batch_size):
         end_idx = start_idx + batch_size
@@ -44,15 +41,17 @@ def predict_knn(
         batch_predictions = model.predict(X_batch)
         batch_probabilities = model.predict_proba(X_batch)
 
-        prediction_batches.append(batch_predictions)
-        probability_batches.append(batch_probabilities)
+        predictions_batches.append(batch_predictions)
+        probabilities_batches.append(batch_probabilities)
 
-    predict_duration = (
-        time.perf_counter() - start if start is not None else 0.0
-    )
+    if settings.enable_timing:
+        end = time.perf_counter()
+        predict_duration = end - start
+    else:
+        predict_duration = 0.0
 
-    predictions = np.concatenate(prediction_batches, axis=0)
-    probabilities = np.concatenate(probability_batches, axis=0)
+    predictions = np.concatenate(predictions_batches, axis=0)
+    probabilities = np.concatenate(probabilities_batches, axis=0)
 
     if predict_duration > 0:
         logger.info(
@@ -78,51 +77,50 @@ def predict_knn(
 
     return predictions, probabilities, predict_duration
 
-
-def build_prediction_summary(
-    model: Any,
-    predictions: np.ndarray,
-    probabilities: np.ndarray,
-    sample_index: int = 0,
-    top_k: int = 3,
-) -> dict[str, object]:
+def extract_prediction_summary(
+        model: KNeighborsClassifier,
+        predictions: np.ndarray,
+        probabilities: np.ndarray,
+        sample_index: int = 0,
+        top_k: int = 3,
+) -> dict:
     """
-    Build a structured summary for one prediction.
+    Build a small summary for one prediction.
 
     Returns:
         {
             "predicted_class": int,
             "confidence": float,
-            "top_k": list[tuple[int, float]],
+            "top_k": list[tuple[int, float]]
         }
     """
     if predictions.ndim != 1:
         raise ValueError("predictions must be a 1D array.")
-
+    
     if probabilities.ndim != 2:
         raise ValueError("probabilities must be a 2D array.")
-
+    
     if not (0 <= sample_index < len(predictions)):
         raise IndexError("sample_index out of range.")
-
+    
     if top_k <= 0:
         raise ValueError("top_k must be > 0.")
-
-    predicted_class = int(predictions[sample_index])
-    probability_row = probabilities[sample_index]
+    
+    pred_class = int(predictions[sample_index])
+    proba_row = probabilities[sample_index]
 
     class_labels = model.classes_
-    predicted_index = int(np.where(class_labels == predicted_class)[0][0])
-    confidence = float(probability_row[predicted_index])
+    pred_idx = int(np.where(class_labels == pred_class)[0][0])
+    confidence = float(proba_row[pred_idx])
 
-    top_indices = np.argsort(probability_row)[::-1][:top_k]
+    top_indices = np.argsort(proba_row)[::-1][:top_k]
     top_predictions = [
-        (int(class_labels[i]), float(probability_row[i]))
+        (int(class_labels[i]), float(proba_row[i]))
         for i in top_indices
     ]
 
     return {
-        "predicted_class": predicted_class,
+        "predicted_class": pred_class,
         "confidence": confidence,
         "top_k": top_predictions,
     }
