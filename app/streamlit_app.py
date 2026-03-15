@@ -14,7 +14,7 @@ import streamlit as st
 from streamlit_drawable_canvas import st_canvas
 
 from mnist_express.config import Settings
-from mnist_express.inference import extract_prediction_summary, predict_knn
+from mnist_express.inference import build_prediction_summary, predict_knn
 from mnist_express.monitoring import (
     load_usage_stats,
     record_prediction,
@@ -141,7 +141,7 @@ def handle_prediction(model, settings: Settings, canvas_result) -> None:
         settings=settings,
     )
 
-    summary = extract_prediction_summary(
+    summary = build_prediction_summary(
         model=model,
         predictions=predictions,
         probabilities=probabilities,
