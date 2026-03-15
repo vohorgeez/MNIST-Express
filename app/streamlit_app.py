@@ -79,7 +79,7 @@ def get_expected_n_features(model) -> int | None:
                 return step.n_features_in_
             
     if hasattr(model, "n_features_in_"):
-        return model.n_feautures_in_
+        return model.n_features_in_
     
     return None
 
