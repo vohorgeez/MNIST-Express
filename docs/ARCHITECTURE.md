@@ -60,7 +60,7 @@ Objectif : prédire sans modifier les artefacts
 Etapes :
     1. Sélection d'un run (`latest`, `best`, ou `run_id` explicite)
     2. Chargement cohérent via `persistence.py`
-    3. Image utilisateur -> flatten
+    3. Image utilisateur -> vectorisation (flatten)
     4. `scaler.transform`
     5. Si PCA activée -> `pca.transform`
     6. `model.predict`
@@ -71,7 +71,7 @@ Règle critique :
 Aucun `.fit()` autorisé.
 
 ## Contrat de chargement d'un run
-`persistence.py` doit exploser une seule fonction publique du type :
+`persistence.py` doit exposer une seule fonction publique du type :
 - `load_run(run_id=None, alias="latest")`
 
 Elle doit :
@@ -106,7 +106,7 @@ Un seul objet "retour" standardisé pour:
     - chemins relatifs
     - config du modèle
     - seed / split info
-- Le bundle doit exposer un accès simple au "chemin racine du run" (soit via `matadata["paths"]`, soit un champ dédié).
+- Le bundle doit exposer un accès simple au "chemin racine du run" (soit via `metadata["paths"]`, soit un champ dédié).
 
 ## Contrat fonctionnel : API d'inférence
 Pour éviter que Streamlit réimplémente le pipeline à sa sauce, `inference.py` doit offrir une fonction unique:
