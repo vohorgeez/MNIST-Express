@@ -22,7 +22,7 @@ L'utilisateur peut dessiner un chiffre sur un canvas et obtenir immédiatement :
 - les **top-k prédictions**
 - le **temps d'inférence**
 
-## Overview
+## Vue d'ensemble
 
 Le projet couvre un pipeline ML complet :
 1. Chargement du dataset MNIST
@@ -35,7 +35,7 @@ Le projet couvre un pipeline ML complet :
 
 L'objectif du projet est **pédagogique** : comprendre concrètement les implications des choix d'architecture dans un pipeline ML.
 
-## Key Features
+## Fonctionnalités clés
 
 ### Entraînement k-NN
 - classification d'images MNIST (784 features)
@@ -130,7 +130,7 @@ Batch size  Queries / sec
 256         ~1580
 1024        ~1750
 
-Le pipeline d'innférence utilise donc le **batching** pour améliorer les performances.
+Le pipeline d'inférence utilise donc le **batching** pour améliorer les performances.
 
 ## Installation
 
@@ -144,7 +144,7 @@ Installation :
 pip install -r requirements.txt
 ```
 
-## Training
+## Entraînement
 
 L'entraînement et le benchmark se lancent avec :
 
@@ -155,14 +155,14 @@ python run_train.py
 Le script :
 1. charge le dataset MNIST
 2. exécute le benchmark `brute / kd_tree / ball_tree`
-3. sélectione le meilleur modèle
+3. sélectionne le meilleur modèle
 4. sauvegarde le modèle entraîné dans :
 
 ```
 artifacts/models/model_knn_best.joblib
 ```
 
-## Streamlit App
+## Application Streamlit
 
 Pour lancer l'interface interactive :
 
@@ -191,7 +191,7 @@ Les statistiques sont enregistrées dans :
 artifacts/monitoring/usage_stats.json
 ```
 
-## Project Evolution
+## Evolution du projet
 
 ### v4 - Benchmark et instrumentation
 - benchmark `brute / kd_tree / ball_tree`
@@ -208,7 +208,7 @@ artifacts/monitoring/usage_stats.json
 ### v2 - Interface Streamlit
 - canvas de dessin
 - prédiction interactive
-- top-k predictions
+- top-k classes les plus probables
 
 ## License
 
