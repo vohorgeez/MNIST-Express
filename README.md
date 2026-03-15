@@ -1,16 +1,14 @@
 # MNIST Express
 
-MNIST Express est une mini-application pédagogique autour du classifieur **k-Nearest Neighbors** appliqué au dataset **MNIST (28×28)**.
+MNIST Express est une mini-application pédagogique qui explore un pipeline **Machine Learning complet** autour du classifieur **k-Nearest Neighbors (k-NN)** appliqué au dataset **MNIST (28×28)**.
 
-Le projet explore plusieurs aspects d’un pipeline ML complet :
+Le projet montre comment passer de :
 
-- entraînement et évaluation d’un modèle k-NN
-- comparaison des algorithmes (`brute`, `kd_tree`, `ball_tree`)
-- optimisation de l’inférence par **batching**
-- instrumentation simple (monitoring et logs)
-- interface interactive via **Streamlit**
+dataset brut → entraînement → benchmarking → optimisation d’inférence → application interactive.
 
-L’application permet de **dessiner un chiffre à la main et obtenir une prédiction en temps réel**.
+L'utilisateur peut **dessiner un chiffre à la main et obtenir une prédiction en temps réel** via une interface Streamlit.
+
+![MNIST Express demo](docs/demo.gif)
 
 ## Demo
 
