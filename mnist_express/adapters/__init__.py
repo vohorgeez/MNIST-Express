@@ -1,0 +1,1 @@
+"""Adaptateurs secondaires : implémentations concrètes des ports du coeur."""
