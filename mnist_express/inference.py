@@ -1,13 +1,13 @@
-from sklearn.neighbors import KNeighborsClassifier
-import numpy as np
-from .config import Settings
 import logging
 import time
+import numpy as np
+from .config import Settings
+from .core.ports import Classifier
 
 logger = logging.getLogger(__name__)
 
 def predict_knn(
-        model: KNeighborsClassifier,
+        model: Classifier,
         X: np.ndarray,
         settings: Settings,
 ) -> tuple[np.ndarray, np.ndarray, float]:
@@ -78,7 +78,7 @@ def predict_knn(
     return predictions, probabilities, predict_duration
 
 def extract_prediction_summary(
-        model: KNeighborsClassifier,
+        model: Classifier,
         predictions: np.ndarray,
         probabilities: np.ndarray,
         sample_index: int = 0,
