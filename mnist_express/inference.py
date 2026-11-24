@@ -124,3 +124,18 @@ def extract_prediction_summary(
         "confidence": confidence,
         "top_k": top_predictions,
     }
+
+def expected_n_features(model: Classifier) -> int | None:
+    """Nombre de features attendu par le modèle (k-NN seul ou pipeline.)"""
+    if hasattr(model, "named_steps"):
+        if "knn" in model.named_steps and hasattr(model.named_steps["knn"], "n_features_in_"):
+            return model.named_steps["knn"].n_features_in_
+
+        for _, step in reversed(model.steps):
+            if hasattr(step, "n_features_in_"):
+                return step.n_features_in_
+
+    if hasattr(model, "n_features_in_"):
+        return model.n_features_in_
+
+    return None
