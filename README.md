@@ -69,16 +69,24 @@ Application Streamlit permettant :
 
 Structure principale du projet :
 
+Le projet suit une architecture hexagonale (ports et adaptateurs) : voir [ADR-001](docs/adr/ADR-001-architecture-hexagonale.md).
+
 ```
 mnist_express/
+ ├── core/              # coeur, sans I/O
+ |   ├── model.py       # objets du domaine (Prediction, UsageStats)
+ |   ├── ports.py       # interfaces dont le coeur a besoin
+ |   └── use_cases.py   # PredictDigit, RecordFeedback, GetUsageStats
+ ├── adapters/          # implémentations des ports (joblib, JSON, horloge)
+ ├── bootstrap.py       # racine de composition : assemble coeur et adaptateurs
  ├── config.py          # configuration globale
  ├── data.py            # chargement dataset MNIST
  ├── preprocessing.py   # pipeline de transformation des dessins
  ├── train.py           # entraînement et benchmark k-NN
  ├── inference.py       # prédiction batchée
- ├── monitoring.py      # instrumentation simple
  ├── metrics.py         # métriques et confusion matrix
- └── persistence.py     # sauvegarde des modèles
+ ├── monitoring.py      # façade de compatibilité (monitoring)
+ └── persistence.py     # façade de compatibilité (sauvegarde des modèles)
 ```
 
 Application interactive :
@@ -192,6 +200,12 @@ artifacts/monitoring/usage_stats.json
 ```
 
 ## Evolution du projet
+
+### v5 - Architecture hexagonale
+- coeur isolé derrière des ports (modèle, statistiques d'usage)
+- Streamlit réduit à un adaptateur d'interface
+- tests de caractérisation écrits avant le refactor, inchangés après
+- règle de dépendance vérifiée par un test
 
 ### v4 - Benchmark et instrumentation
 - benchmark `brute / kd_tree / ball_tree`
