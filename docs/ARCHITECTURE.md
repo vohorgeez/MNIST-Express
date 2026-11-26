@@ -5,6 +5,21 @@
 - `mnist_express/` = logique métier ML
 - `artifacts/` = modèles + reports + monitoring
 
+## Architecture hexagonale (depuis v5)
+Décision et schémas avant/après : [ADR-001](adr/ADR-001-architecture-hexagonale.md).
+
+- Coeur, sans aucune I/O :
+    - `core/model.py` : objets du domaine (`Prediction`, `UsageStats` et ses règles de mise à jour, `EmptyDrawingError`)
+    - `core/ports.py` : ports secondaires (`Classifier`, `ModelRepository`, `UsageStatsRepository`)
+    - `core/use_cases.py` : cas d'usage (`PredictDigit`, `RecordFeedback`, `GetUsageStats`)
+    - `preprocessing.py` et `inference.py` : calculs purs utilisés par les cas d'usage
+- Adaptateurs secondaires, dans `adapters/` : `JoblibModelRepository`, `JsonUsageStatsRepository`, horloge système
+- Adapteurs primaires : `app/streamlit_app.py`, `run_train.py`
+- Racine de composition : `bootstrap.py`, seul endroit qui choisit les adaptateurs
+- `persistence.py` et `monitoring.py` : façades de compatibilité vers les adaptateurs.
+
+Règle de dépendance : le coeur n'importe ni Streamlit, ni joblib, ni aucun module d'accès aux fichiers. Elle est vérifiée par `tests/test_architecture.py`.
+
 ## Modules et responsabilités
 - `data.py`
     - Responsabilité : chargement du dataset
@@ -71,6 +86,8 @@ Règle critique :
 Aucun `.fit()` autorisé.
 
 ## Contrat de chargement d'un run
+Contrat cible, pas encore implémenté (voir ADR-001, conséquences). Il prendra place derrière le port `ModelRepository`.
+
 `persistence.py` doit exposer une seule fonction publique du type :
 - `load_run(run_id=None, alias="latest")`
 
