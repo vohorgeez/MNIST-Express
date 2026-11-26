@@ -1,6 +1,6 @@
+from mnist_express.bootstrap import build_model_repository
 from mnist_express.config import Settings
 from mnist_express.data import load_data
-from mnist_express.persistence import save_model
 from mnist_express.train import benchmark_knn_algorithms
 
 
@@ -31,7 +31,7 @@ def main():
     )[0]
 
     best_model = results[best_algorithm]["model"]
-    save_path = save_model(best_model, settings.model_filename, settings)
+    save_path = build_model_repository(settings).save(best_model)
 
     print("=== KNN algorithm benchmark ===")
     for algorithm, result in results.items():
