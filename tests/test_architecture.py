@@ -45,6 +45,13 @@ def forbidden_imports(source: str) -> list[str]:
 def test_core_does_not_depend_on_infrastructure(path):
     assert forbidden_imports(path.read_text(encoding="utf-8")) == []
 
+def test_streamlit_app_never_touches_storage_directly():
+    """Règle de docs/ARCHITECTURE.md : l'app ne charge jamais un joblib elle-même."""
+    source = (PACKAGE.parent / "app" / "streamlit_app.py").read_text(encoding="utf-8")
+    roots = {module.split(".")[0] for module in imported_modules(source)}
+
+    assert roots.isdisjoint({"joblib", "pickle", "json", "os"})
+
 def test_the_guard_actually_detects_violations():
     source = "import joblib\nfrom ..adapters.clock import utc_now_iso\nimport numpy as np\n"
 
