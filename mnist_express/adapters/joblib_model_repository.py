@@ -4,7 +4,7 @@ from pathlib import Path
 import joblib
 from ..core.ports import Classifier
 
-logger = logging.getogger(__name__)
+logger = logging.getLogger(__name__)
 
 class JoblibModelRepository:
     def __init__(self, model_dir: str | Path, filename: str):
